@@ -6,6 +6,7 @@ import { ChatComposer } from '@/components/chat/ChatComposer';
 import { RecentAnalysisCard } from '@/components/chat/RecentAnalysisCard';
 import { easeSoft, fadeUp, scaleIn, springSnappy, staggerContainer, staggerFast } from '@/lib/motion';
 import { cn } from '@/lib/utils';
+import type { AttachmentItem } from '@/types/chat';
 
 const icons = {
   risk: ShieldAlert,
@@ -31,12 +32,12 @@ const accentStyles = {
   },
 } as const;
 
-export function ChatEmptyState({ onSend }: { onSend: (text: string) => void }) {
+export function ChatEmptyState({ onSend }: { onSend: (text: string, attachments?: AttachmentItem[]) => void }) {
   const reduce = useReducedMotion();
 
   return (
     <motion.div
-      className="mx-auto flex w-full max-w-5xl flex-col px-4 py-8 sm:px-6 lg:px-8"
+      className="mx-auto flex w-full max-w-5xl flex-col px-4 py-6 sm:px-6 lg:px-8 overflow-y-auto"
       variants={staggerContainer}
       initial={reduce ? false : 'hidden'}
       animate="show"
@@ -49,15 +50,15 @@ export function ChatEmptyState({ onSend }: { onSend: (text: string) => void }) {
 
         <motion.h1
           variants={fadeUp}
-          className="mt-8 text-[28px] font-semibold tracking-tight text-frost sm:text-[34px]"
+          className="mt-6 text-[28px] font-semibold tracking-tight text-frost sm:text-[34px]"
         >
           Ready to Decide Something New?
         </motion.h1>
-        <motion.p variants={fadeUp} className="mt-3 max-w-xl text-sm leading-relaxed text-mute">
-          Ask VERDICT about a decision. It evaluates evidence, contradictions, and uncertainty — it does not invent truth.
+        <motion.p variants={fadeUp} className="mt-2 max-w-xl text-sm leading-relaxed text-mute">
+          Ask VERDICT about a decision or attach PDFs/Images for automated OCR contradiction verification.
         </motion.p>
 
-        <motion.div variants={staggerFast} className="mt-6 flex flex-wrap items-center justify-center gap-2">
+        <motion.div variants={staggerFast} className="mt-5 flex flex-wrap items-center justify-center gap-2">
           {quickPrompts.map((item) => (
             <motion.button
               key={item.label}
@@ -67,7 +68,7 @@ export function ChatEmptyState({ onSend }: { onSend: (text: string) => void }) {
               whileTap={reduce ? undefined : { scale: 0.97 }}
               transition={springSnappy}
               onClick={() => onSend(item.prompt)}
-              className="rounded-full border border-line bg-card/70 px-3.5 py-2 text-xs text-mute backdrop-blur hover:border-violet-400/30 hover:bg-violet-500/10 hover:text-frost"
+              className="rounded-full border border-line bg-card/70 px-3.5 py-1.5 text-xs text-mute backdrop-blur hover:border-violet-400/30 hover:bg-violet-500/10 hover:text-frost"
             >
               {item.label}
             </motion.button>

@@ -10,7 +10,7 @@ import { demoDecision, mockCases, mockConnectors } from '@/data/verdict';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
 
-async function getJson<T>(path: string, init?: RequestInit, timeoutMs = 2500): Promise<T | null> {
+async function getJson<T>(path: string, init?: RequestInit, timeoutMs = 4000): Promise<T | null> {
   try {
     const res = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
@@ -28,7 +28,7 @@ async function getJson<T>(path: string, init?: RequestInit, timeoutMs = 2500): P
 }
 
 export async function checkBackendHealth(): Promise<{ online: boolean; message: string }> {
-  const data = await getJson<{ status?: string; service?: string }>('/health', undefined, 1500);
+  const data = await getJson<{ status?: string; service?: string }>('/health', undefined, 2000);
   if (data?.status) {
     return { online: true, message: `${data.service ?? 'FastAPI'} · ${data.status}` };
   }
@@ -84,6 +84,33 @@ export async function fetchConnectors(): Promise<ConnectorConfig[]> {
   return data && data.length > 0 ? data : mockConnectors;
 }
 
+export async function testGatewayUrlApi(url: string): Promise<{ success: boolean; url: string; message?: string; details?: any }> {
+  const data = await getJson<{ success: boolean; url: string; message?: string; details?: any }>('/api/connectors/gateway-url', {
+    method: 'POST',
+    body: JSON.stringify({ url }),
+  }, 5000);
+  if (data) return data;
+  return { success: false, url, message: 'Could not communicate with Backend or Gateway server.' };
+}
+
+export async function fetchGatewayStatusApi(): Promise<{ success: boolean; url?: string; details?: any; message?: string }> {
+  const data = await getJson<any>('/api/connectors/gateway-status', undefined, 3000);
+  return data ?? { success: false, message: 'Gateway offline' };
+}
+
+export async function switchScenarioApi(scenario: string, caseId: string = 'CASE-TX92831'): Promise<{ success: boolean; decision?: DecisionPacket }> {
+  const data = await getJson<any>('/api/connectors/scenario', {
+    method: 'POST',
+    body: JSON.stringify({ scenario, case_id: caseId }),
+  }, 10000);
+  return data ?? { success: false };
+}
+
+export async function fetchGatewayDocumentsApi(): Promise<{ count: number; documents: Array<{ filename: string; file_type: string; size_bytes: number; download_url?: string }> }> {
+  const data = await getJson<any>('/api/connectors/documents', undefined, 4000);
+  return data ?? { count: 0, documents: [] };
+}
+
 /** Maps console form → POST /api/evidence/manual (EvidenceCreateRequest). */
 export async function ingestEvidenceApi(
   evidence: Partial<EvidenceObject>,
@@ -130,3 +157,68 @@ export async function ingestEvidenceApi(
 
   return { success: true, evidence: fallback };
 }
+
+export async function uploadEvidenceFileApi(file: File, caseId: string): Promise<{ success: boolean; evidence_objects?: EvidenceObject[]; message?: string }> {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('case_id', caseId);
+
+    const res = await fetch(`${API_BASE_URL}/api/evidence/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return { success: true, evidence_objects: data.evidence_objects || [] };
+    }
+    return { success: false, message: `Server returned status ${res.status}` };
+  } catch (err: any) {
+    return { success: false, message: err?.message || 'Upload failed' };
+  }
+}
+
+export async function uploadOcrFileApi(file: File, caseId = 'DEFAULT-CASE'): Promise<{
+  id: string;
+  filename: string;
+  file_type: string;
+  file_size: number;
+  extractedText: string;
+  ocrConfidence: number;
+  pageCount: number;
+} | null> {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('case_id', caseId);
+
+    const res = await fetch(`${API_BASE_URL}/api/chat/ocr`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (err) {
+    console.warn('Backend OCR fallback to local text extraction', err);
+  }
+  return null;
+}
+
+export async function fetchChatThreadsApi(): Promise<any[] | null> {
+  return getJson<any[]>('/api/chat/threads', undefined, 3000);
+}
+
+export async function sendChatMessageApi(threadId: string, content: string, attachments: any[] = []): Promise<any | null> {
+  return getJson<any>(`/api/chat/threads/${encodeURIComponent(threadId)}/messages`, {
+    method: 'POST',
+    body: JSON.stringify({ content, attachments }),
+  }, 15000);
+}
+
+export async function deleteChatThreadApi(threadId: string): Promise<boolean> {
+  const res = await getJson<any>(`/api/chat/threads/${encodeURIComponent(threadId)}`, { method: 'DELETE' });
+  return res != null;
+}
+
+

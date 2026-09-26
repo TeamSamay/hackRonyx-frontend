@@ -1,37 +1,24 @@
 import {
-  Archive,
-  Library,
   MessageSquare,
   Plus,
-  ShieldAlert,
   Plug,
   Gavel,
-  ShieldCheck,
   X,
   Lock,
-  Swords,
-  UserCheck,
+  Briefcase,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { AnimatedOrb } from '@/components/chat/AnimatedOrb';
-import { springSnappy, springSoft } from '@/lib/motion';
+import { springSnappy } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import type { ChatThread } from '@/types/chat';
 import type { ConsoleSection } from '@/types/verdict';
 
-const features = [
-  { id: 'chat', label: 'Decision Chat', icon: MessageSquare },
-  { id: 'archived', label: 'Archived Cases', icon: Archive },
-  { id: 'library', label: 'Evidence Library', icon: Library },
-] as const;
-
-const workspaces: Array<{ id: ConsoleSection; label: string; icon: any }> = [
-  { id: 'cases', label: 'Active Fraud Cases', icon: ShieldAlert },
-  { id: 'connectors', label: 'Edge Gateway & Server Links', icon: Plug },
-  { id: 'decisions', label: 'Decision Gate (6 States)', icon: Gavel },
-  { id: 'challenge', label: 'Challenge Stress-Test', icon: Swords },
-  { id: 'reviews', label: 'Analyst Review & Audit', icon: UserCheck },
-  { id: 'demo', label: '1-Click Pitch Demo (TX-92831)', icon: ShieldCheck },
+const navItems: Array<{ id: ConsoleSection; label: string; icon: any }> = [
+  { id: 'overview', label: 'Decision Chat', icon: MessageSquare },
+  { id: 'connectors', label: 'Evidence Vault', icon: Plug },
+  { id: 'decisions', label: 'Trust Gate', icon: Gavel },
+  { id: 'cases', label: 'Cases & Audit', icon: Briefcase },
 ];
 
 export function ChatSidebar({
@@ -57,10 +44,8 @@ export function ChatSidebar({
 }) {
   const visible =
     view === 'archived'
-      ? threads.filter((thread) => thread.archived)
-      : view === 'library'
-        ? threads.filter((thread) => thread.messages.length > 0)
-        : threads.filter((thread) => !thread.archived && (thread.messages.length > 0 || thread.id === activeId));
+      ? threads.filter((t) => t.archived)
+      : threads.filter((t) => t.messages.length > 0 || t.id === activeId);
 
   return (
     <aside
@@ -69,12 +54,13 @@ export function ChatSidebar({
         open && 'translate-x-0',
       )}
     >
+      {/* Brand Title Header */}
       <div className="flex items-center justify-between gap-3 px-4 pb-3 pt-5 border-b border-line/40">
         <div className="flex items-center gap-3">
           <AnimatedOrb size="sm" />
           <div>
             <div className="text-sm font-semibold tracking-wide text-frost">VERDICT AI</div>
-            <div className="text-[10px] uppercase tracking-widest text-violet-300 font-mono">Fraud Intelligence</div>
+            <div className="text-[10px] uppercase tracking-widest text-violet-300 font-mono">Decision Intelligence</div>
           </div>
         </div>
         <button type="button" onClick={onClose} className="text-mute hover:text-frost lg:hidden">
@@ -82,7 +68,8 @@ export function ChatSidebar({
         </button>
       </div>
 
-      <div className="px-3 pt-3">
+      {/* Primary Action Button (Fixed double plus bug) */}
+      <div className="px-3 pt-4">
         <motion.button
           type="button"
           whileHover={{ scale: 1.02, y: -1 }}
@@ -93,52 +80,19 @@ export function ChatSidebar({
             if (onSelectSection) onSelectSection('overview');
             onClose();
           }}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#221C2C] px-3 py-2.5 text-xs font-semibold text-frost hover:border-violet-400/30 hover:bg-[#2A2234]"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#221C2C] px-3 py-2.5 text-xs font-semibold text-frost hover:border-violet-400/30 hover:bg-[#2A2234] shadow-md transition"
         >
-          <Plus className="h-4 w-4" />
-          New Fraud Evaluation
+          <Plus className="h-4 w-4 text-violet-300" />
+          New Evaluation
         </motion.button>
       </div>
 
       <div className="mt-4 min-h-0 flex-1 overflow-y-auto px-3 pb-4 space-y-5">
+        {/* Navigation Section */}
         <div>
-          <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-mute">Primary Interface</p>
+          <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-mute">Core Workspaces</p>
           <div className="mt-2 space-y-1">
-            {features.map((item) => (
-              <motion.button
-                key={item.id}
-                type="button"
-                whileHover={{ x: 2 }}
-                whileTap={{ scale: 0.98 }}
-                transition={springSnappy}
-                onClick={() => {
-                  onViewChange(item.id);
-                  if (onSelectSection) onSelectSection('overview');
-                  onClose();
-                }}
-                className={cn(
-                  'relative flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-xs font-medium',
-                  view === item.id ? 'text-frost font-semibold' : 'text-mute hover:text-frost',
-                )}
-              >
-                {view === item.id ? (
-                  <motion.span
-                    layoutId="sidebar-feature-active"
-                    className="absolute inset-0 rounded-xl bg-violet-500/15 border border-violet-400/30"
-                    transition={springSoft}
-                  />
-                ) : null}
-                <item.icon className="relative z-[1] h-4 w-4 text-violet-300" />
-                <span className="relative z-[1] truncate">{item.label}</span>
-              </motion.button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-mute">Fraud Workspaces</p>
-          <div className="mt-2 space-y-1">
-            {workspaces.map((item) => {
+            {navItems.map((item) => {
               const Icon = item.icon;
               return (
                 <motion.button
@@ -151,23 +105,24 @@ export function ChatSidebar({
                     if (onSelectSection) onSelectSection(item.id);
                     onClose();
                   }}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-xs font-medium text-mute hover:bg-white/[0.04] hover:text-frost transition"
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-xs font-medium text-mute hover:bg-white/[0.04] hover:text-frost transition group"
                 >
-                  <Icon className="h-4 w-4 text-violet-300" />
-                  <span className="truncate">{item.label}</span>
+                  <div className="grid h-7 w-7 place-items-center rounded-lg border border-violet-500/20 bg-violet-500/10 text-violet-300 shrink-0 group-hover:border-violet-400/40 group-hover:text-frost transition">
+                    <Icon className="h-3.5 w-3.5" />
+                  </div>
+                  <span className="truncate text-xs font-semibold text-frost">{item.label}</span>
                 </motion.button>
               );
             })}
           </div>
         </div>
 
+        {/* Saved Decision Threads & Audited Cases */}
         <div>
-          <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-mute">
-            {view === 'archived' ? 'Archived' : view === 'library' ? 'Library' : 'Recent Cases'}
-          </p>
+          <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-mute">Recent Evaluations</p>
           <div className="mt-2 space-y-1">
             {visible.length === 0 ? (
-              <p className="px-3 py-2 text-xs text-mute">No chats here yet.</p>
+              <p className="px-3 py-2 text-xs text-mute font-mono">No active evaluations.</p>
             ) : (
               <AnimatePresence initial={false}>
                 {visible.map((thread) => (
@@ -187,11 +142,11 @@ export function ChatSidebar({
                       onClose();
                     }}
                     className={cn(
-                      'relative w-full rounded-xl px-3 py-2 text-left text-xs',
-                      activeId === thread.id ? 'text-frost bg-white/[0.06]' : 'text-mute hover:text-frost',
+                      'relative w-full rounded-xl px-3 py-2 text-left text-xs transition',
+                      activeId === thread.id ? 'text-frost bg-violet-500/15 border border-violet-400/30' : 'text-mute hover:text-frost hover:bg-white/[0.03]',
                     )}
                   >
-                    <span className="relative z-[1] line-clamp-1">{thread.title}</span>
+                    <div className="truncate font-medium">{thread.title}</div>
                   </motion.button>
                 ))}
               </AnimatePresence>
@@ -200,14 +155,15 @@ export function ChatSidebar({
         </div>
       </div>
 
+      {/* Footer status card */}
       <div className="p-3 border-t border-line/40">
         <div className="rounded-2xl border border-line/60 bg-card/80 p-3 space-y-1.5">
           <div className="flex items-center gap-2 text-xs font-semibold text-frost">
-            <Lock className="h-3.5 w-3.5 text-violet-300" />
-            Deterministic Gate Active
+            <Lock className="h-3.5 w-3.5 text-emerald-400" />
+            Evidence Trust Gate: Active
           </div>
           <p className="text-[10px] leading-relaxed text-mute font-sans">
-            6 strict trust states enforced. LLM reasoning cannot bypass Python rules.
+            6 strict trust states enforced. LLM output validated against verified evidence.
           </p>
         </div>
       </div>
