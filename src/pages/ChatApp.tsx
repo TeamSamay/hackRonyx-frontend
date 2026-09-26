@@ -106,7 +106,7 @@ export function ChatApp() {
 
     let assistantContent = '';
     if (backendOnline) {
-      const result = await askVerdictAI(text, activeCaseId);
+      const result = await askVerdictAI(text, activeCaseId, threadId, attachments);
       if (result.decision) {
         setActiveDecision(result.decision);
       }

@@ -358,12 +358,16 @@ export async function deleteChatThreadApi(threadId: string): Promise<boolean> {
   return res != null;
 }
 
-export async function askVerdictAI(prompt: string, currentCaseId?: string): Promise<{
+export async function askVerdictAI(
+  prompt: string,
+  currentCaseId?: string,
+  threadId: string = 'thread-1',
+  attachments: any[] = [],
+): Promise<{
   text: string;
   decision?: DecisionPacket | null;
 }> {
   try {
-    const targetCaseId = currentCaseId || (prompt.toLowerCase().includes('tx') ? 'CASE-TX92831' : 'CASE-TX92831');
     const health = await checkBackendHealth();
     if (!health.online) {
       return {
@@ -371,6 +375,24 @@ export async function askVerdictAI(prompt: string, currentCaseId?: string): Prom
       };
     }
 
+    // 1. Try Live Chat API (Groq LLM + Real-Time Web Search + Document Context)
+    try {
+      const chatRes = await sendChatMessageApi(threadId, prompt, attachments);
+      if (chatRes && chatRes.botMessage && chatRes.botMessage.content) {
+        let decision: DecisionPacket | null = null;
+        if (currentCaseId || prompt.toLowerCase().includes('tx') || prompt.toLowerCase().includes('case')) {
+          decision = await fetchCaseDecision(currentCaseId || 'CASE-TX92831').catch(() => null);
+        }
+        return {
+          text: chatRes.botMessage.content,
+          decision,
+        };
+      }
+    } catch {
+      // fallback to rule-based analyzeCase
+    }
+
+    const targetCaseId = currentCaseId || (prompt.toLowerCase().includes('tx') ? 'CASE-TX92831' : 'CASE-TX92831');
     const decision = await analyzeCase(targetCaseId, prompt);
     
     const contradictionNote =

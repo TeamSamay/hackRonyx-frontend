@@ -63,10 +63,36 @@ function RenderAssistantContent({
     setTimeout(() => setActionToast(null), 5000);
   };
 
-  const isConflicting = content.includes('CONFLICTING') || content.includes('REFUSE') || content.includes('BLOCKED');
-  const isSufficient = content.includes('SUFFICIENT') || content.includes('APPROVE') || content.includes('APPROVED');
-  const isIncomplete = content.includes('INCOMPLETE') || content.includes('REQUEST_DATA') || content.includes('NEED_MORE_INFO');
-  const isGreeting = content.includes('VERDICT DECISION INTELLIGENCE AUTHORITY') || content.includes('Select a Real-World Decision Scenario');
+  // Only evaluate trust gate badges if the assistant response actually evaluated a trust gate
+  const hasGateEvaluation =
+    content.includes('DETERMINISTIC TRUST GATE') ||
+    content.includes('DETERMINISTIC GATE') ||
+    content.includes('TRUST STATE:');
+
+  const isConflicting =
+    hasGateEvaluation &&
+    (/\b(CONFLICTING|REFUSE|REFUSED|BLOCKED|CRITICAL CONTRADICTION)\b/i.test(content) ||
+      content.includes('DISBURSEMENT BLOCKED'));
+
+  const isIncomplete =
+    hasGateEvaluation &&
+    !isConflicting &&
+    (/\b(INCOMPLETE|REQUEST_DATA|NEED_MORE_INFO|INSUFFICIENT|AWAITING INGESTION)\b/i.test(content) ||
+      content.includes('NEED MORE INFO') ||
+      content.includes('INSUFFICIENT PRIMARY SOURCES') ||
+      content.includes('HOLD FOR MISSING RECORDS'));
+
+  const isSufficient =
+    hasGateEvaluation &&
+    !isConflicting &&
+    !isIncomplete &&
+    (/\b(SUFFICIENT|APPROVE|APPROVED|VERIFIED & CLEARED|100% VERIFIED)\b/i.test(content) &&
+      !content.includes('INSUFFICIENT'));
+
+  const isGreeting =
+    content.includes('VERDICT DECISION INTELLIGENCE AUTHORITY') ||
+    content.includes('Select a Real-World Decision Scenario') ||
+    !hasGateEvaluation;
 
   // Split lines into structured sections
   const lines = content.split('\n').filter((l) => l.trim().length > 0);
