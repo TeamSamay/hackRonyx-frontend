@@ -1,63 +1,85 @@
-import { FileText, ShieldAlert, Scale } from 'lucide-react';
-import { quickPrompts, toolCards } from '@/data/chat';
+import { motion, useReducedMotion } from 'motion/react';
+import { AnimatedOrb } from '@/components/chat/AnimatedOrb';
 import { ChatComposer } from '@/components/chat/ChatComposer';
+import { easeSoft, fadeUp, scaleIn, springSnappy, staggerContainer } from '@/lib/motion';
+import type { AttachmentItem } from '@/types/chat';
 
-const icons = {
-  risk: ShieldAlert,
-  claim: Scale,
-  verdict: FileText,
-};
+const suggestedQueries = [
+  {
+    label: 'Audit transaction TX-92831',
+    prompt: 'Evaluate transaction TX-92831 for account 4902-8811 with GPS telemetry',
+  },
+  {
+    label: 'Property chain of title check',
+    prompt: 'Person 1 transferred property to Person 2 in 2018. Person 3 is buying in 2026. Validate chain of title and encumbrance.',
+  },
+  {
+    label: 'Corporate due diligence search',
+    prompt: 'Verify company Infosys and check if there are any fraud or regulatory sanctions reported online',
+  },
+  {
+    label: 'Insurance claim assessment',
+    prompt: 'Is there sufficient evidence to clear insurance claim CLAIM-782?',
+  },
+];
 
-export function ChatEmptyState({ onSend }: { onSend: (text: string) => void }) {
+export function ChatEmptyState({ onSend }: { onSend: (text: string, attachments?: AttachmentItem[]) => void }) {
+  const reduce = useReducedMotion();
+
   return (
-    <div className="page-enter mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center px-4 py-8">
-      <div className="glow-orb h-[118px] w-[118px] rounded-full sm:h-[140px] sm:w-[140px]" />
-      <h1 className="mt-8 text-center text-3xl font-medium tracking-tight text-frost sm:text-4xl">
-        Ready to Decide Something New?
-      </h1>
-      <p className="mt-3 max-w-xl text-center text-sm text-mute">
-        Ask VERDICT about a decision. It evaluates evidence, contradictions, and uncertainty — it does not invent truth.
-      </p>
+    <motion.div
+      className="mx-auto flex h-full w-full max-w-3xl flex-col items-center justify-center px-4 py-8 sm:px-6 overflow-y-auto"
+      variants={staggerContainer}
+      initial={reduce ? false : 'hidden'}
+      animate="show"
+      inherit={false}
+    >
+      <div className="flex w-full flex-col items-center text-center">
+        <motion.div variants={scaleIn}>
+          <AnimatedOrb size="hero" />
+        </motion.div>
 
-      <div className="mt-7 flex flex-wrap items-center justify-center gap-2">
-        {quickPrompts.map((item) => (
-          <button
-            key={item.label}
-            type="button"
-            onClick={() => onSend(item.prompt)}
-            className="rounded-full border border-line bg-card/80 px-3.5 py-2 text-xs text-mute transition hover:border-[#3A3348] hover:text-frost"
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+        <motion.h1
+          variants={fadeUp}
+          className="mt-6 text-2xl font-semibold tracking-tight text-frost sm:text-3xl"
+        >
+          What would you like to investigate?
+        </motion.h1>
 
-      <div className="mt-6 w-full max-w-3xl">
-        <ChatComposer onSend={onSend} />
-      </div>
+        <motion.p variants={fadeUp} className="mt-2 text-xs sm:text-sm text-mute max-w-md">
+          Ask questions, upload evidence documents, or cross-examine case contradictions.
+        </motion.p>
 
-      <div className="mt-8 grid w-full gap-3 sm:grid-cols-3">
-        {toolCards.map((card) => {
-          const Icon = icons[card.id as keyof typeof icons];
-          return (
-            <button
-              key={card.id}
+        {/* Input Composer */}
+        <motion.div
+          variants={fadeUp}
+          className="mt-8 w-full"
+          transition={{ duration: 0.55, ease: easeSoft, delay: 0.05 }}
+        >
+          <ChatComposer onSend={onSend} />
+        </motion.div>
+
+        {/* Clean, subtle pill suggestions */}
+        <motion.div
+          variants={fadeUp}
+          className="mt-6 flex flex-wrap items-center justify-center gap-2 max-w-2xl"
+        >
+          {suggestedQueries.map((item) => (
+            <motion.button
+              key={item.label}
               type="button"
-              onClick={() => onSend(card.prompt)}
-              className="rounded-2xl border border-line bg-card p-4 text-left transition duration-200 hover:-translate-y-0.5 hover:border-[#3A3348]"
+              whileHover={reduce ? undefined : { scale: 1.02 }}
+              whileTap={reduce ? undefined : { scale: 0.98 }}
+              transition={springSnappy}
+              onClick={() => onSend(item.prompt)}
+              className="rounded-full border border-line bg-card/60 px-3.5 py-1.5 text-xs text-mute transition hover:border-[#3A3348] hover:bg-card hover:text-frost"
             >
-              <div className="flex items-start justify-between gap-3">
-                <span className="grid h-9 w-9 place-items-center rounded-xl border border-line bg-white/[0.03] text-violet-200">
-                  <Icon className="h-4 w-4" />
-                </span>
-                <span className="rounded-full border border-line px-2.5 py-1 text-[11px] text-mute">{card.action}</span>
-              </div>
-              <h2 className="mt-4 text-sm font-semibold text-frost">{card.title}</h2>
-              <p className="mt-1 text-xs leading-relaxed text-mute">{card.description}</p>
-            </button>
-          );
-        })}
+              {item.label}
+            </motion.button>
+          ))}
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }
+

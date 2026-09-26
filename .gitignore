@@ -4,3 +4,7 @@ dist
 *.local
 .vite
 .turbo
+
+.env
+.env.local
+
