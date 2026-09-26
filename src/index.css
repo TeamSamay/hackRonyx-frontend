@@ -24,19 +24,18 @@ body {
   background: rgba(124, 108, 255, 0.35);
 }
 
+/* Hide scrollbars across the entire application */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 0px;
+  height: 0px;
+  display: none;
 }
 
-::-webkit-scrollbar-thumb {
-  background: #2a2432;
-  border-radius: 99px;
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
 
 button,
 input,
