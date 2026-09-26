@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
 import { ChevronDown, Download, Menu, Settings } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
+import { AnimatePresence, motion } from 'motion/react';
 import { ChatSidebar } from '@/components/chat/ChatSidebar';
 import { ChatEmptyState } from '@/components/chat/ChatEmptyState';
 import { ChatConversation } from '@/components/chat/ChatConversation';
 import { createEmptyThread, replyTo, starterThreads } from '@/data/chat';
+import { viewSwap } from '@/lib/motion';
 import type { ChatThread } from '@/types/chat';
 
 type View = 'chat' | 'archived' | 'library';
@@ -83,8 +85,7 @@ export function ChatApp() {
   const showEmpty = !active || active.messages.length === 0;
 
   return (
-    <div className="min-h-screen bg-outer p-3 sm:p-4 md:p-5">
-      <div className="relative mx-auto flex h-[calc(100vh-1.5rem)] overflow-hidden rounded-shell border border-white/10 bg-ink shadow-float sm:h-[calc(100vh-2rem)] md:h-[calc(100vh-2.5rem)]">
+    <div className="relative flex h-screen w-full overflow-hidden bg-ink">
         {sidebarOpen ? (
           <button
             type="button"
@@ -106,7 +107,7 @@ export function ChatApp() {
         />
 
         <div className="main-canvas flex min-w-0 flex-1 flex-col">
-          <header className="flex h-16 shrink-0 items-center gap-3 border-b border-line px-4 sm:px-6">
+          <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line/80 px-4 sm:px-6">
             <button
               type="button"
               className="grid h-9 w-9 place-items-center rounded-full border border-line text-mute lg:hidden"
@@ -117,7 +118,7 @@ export function ChatApp() {
             </button>
 
             <DropdownMenu.Root>
-              <DropdownMenu.Trigger className="inline-flex items-center gap-1 rounded-full border border-line bg-card px-3 py-1.5 text-xs text-frost outline-none">
+              <DropdownMenu.Trigger className="inline-flex items-center gap-1.5 rounded-full border border-line bg-card/80 px-3 py-1.5 text-xs text-frost outline-none backdrop-blur hover:border-[#3A3348]">
                 {model}
                 <ChevronDown className="h-3.5 w-3.5 text-mute" />
               </DropdownMenu.Trigger>
@@ -171,14 +172,32 @@ export function ChatApp() {
           </header>
 
           <main className="min-h-0 flex-1 overflow-y-auto">
-            {showEmpty ? (
-              <ChatEmptyState onSend={send} />
-            ) : (
-              <ChatConversation messages={active.messages} pending={pending} onSend={send} />
-            )}
+            <AnimatePresence mode="wait">
+              {showEmpty ? (
+                <motion.div
+                  key="empty"
+                  initial={viewSwap.initial}
+                  animate={viewSwap.animate}
+                  exit={viewSwap.exit}
+                  transition={viewSwap.transition}
+                >
+                  <ChatEmptyState onSend={send} />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key={active?.id ?? 'chat'}
+                  className="h-full"
+                  initial={viewSwap.initial}
+                  animate={viewSwap.animate}
+                  exit={viewSwap.exit}
+                  transition={viewSwap.transition}
+                >
+                  <ChatConversation messages={active.messages} pending={pending} onSend={send} />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </main>
         </div>
-      </div>
     </div>
   );
 }

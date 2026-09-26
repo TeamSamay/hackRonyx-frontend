@@ -1,5 +1,5 @@
-import { ChatApp } from '@/pages/ChatApp';
+import { VerdictConsoleApp } from '@/pages/VerdictConsoleApp';
 
 export default function App() {
-  return <ChatApp />;
+  return <VerdictConsoleApp />;
 }
