@@ -40,6 +40,7 @@ import {
 import Lenis from 'lenis';
 import { AnimatedOrb } from '@/components/chat/AnimatedOrb';
 import { HeroScene } from './HeroScene';
+import { MOTION_OK, ScrollTrigger, gsap, useGSAP } from '@/lib/gsap';
 import { easeOutExpo, fadeUp, staggerContainer } from '@/lib/motion';
 import { cn } from '@/lib/utils';
 import { TRUST_STATE_META, type TrustStatus } from '@/types/verdict';
@@ -191,8 +192,15 @@ export function LandingPage() {
       wheelMultiplier: 0.95,
       anchors: { offset: -72 },
     });
+    lenis.on('scroll', ScrollTrigger.update);
     return () => lenis.destroy();
   }, [reduce]);
+
+  useEffect(() => {
+    if (intro) return;
+    const frame = window.requestAnimationFrame(() => ScrollTrigger.refresh());
+    return () => window.cancelAnimationFrame(frame);
+  }, [intro]);
 
   useEffect(() => {
     if (!intro) return;
@@ -507,6 +515,8 @@ export function LandingPage() {
             </Reveal>
           </section>
 
+          <ManifestoSection scrollRef={scrollRef} />
+
           <section id="gate" className="relative scroll-mt-24 overflow-hidden border-y border-slate-200/70 bg-gradient-to-b from-violet-50/70 via-white to-white">
             <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
               <SectionIntro
@@ -555,76 +565,9 @@ export function LandingPage() {
 
           <PipelineSection scrollRef={scrollRef} />
 
-          <section id="case" className="scroll-mt-24 border-t border-slate-200/70 bg-white">
-            <div className="mx-auto grid max-w-6xl gap-10 px-5 py-20 sm:px-8 sm:py-28 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center">
-              <Reveal stagger>
-                <motion.p
-                  variants={fadeUp}
-                  className="text-[11px] font-medium uppercase tracking-[0.22em] text-violet-600"
-                >
-                  Case TX-92831
-                </motion.p>
-                <motion.h2
-                  variants={fadeUp}
-                  className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl"
-                >
-                  Mumbai on the ledger. Delhi on the device.
-                </motion.h2>
-                <motion.p variants={fadeUp} className="mt-5 text-base leading-relaxed text-slate-600">
-                  An ₹85,000 transfer. Core banking places the terminal in Mumbai. Device telemetry places the handset in
-                  Delhi at the same time. KYC still reads Mumbai. The fraud model scores 0.91 and the anomaly model 0.84.
-                </motion.p>
-                <motion.p variants={fadeUp} className="mt-4 text-base leading-relaxed text-slate-600">
-                  The gate locks <span className="font-semibold text-orange-600">CONFLICTING</span> and routes the packet
-                  to human review.
-                </motion.p>
-                <motion.div variants={fadeUp}>
-                  <Link to="/console?section=demo" className={cn(primaryBtn, 'mt-8')} data-cursor="Run">
-                    Run this case
-                    <ArrowRight className="h-4 w-4" />
-                  </Link>
-                </motion.div>
-              </Reveal>
+          <CaseSection scrollRef={scrollRef} />
 
-              <ClashDiagram />
-            </div>
-          </section>
-
-          <section className="px-5 pb-20 pt-4 sm:px-8 sm:pb-28">
-            <Reveal className="mx-auto max-w-6xl">
-              <div className="relative overflow-hidden rounded-[32px] bg-gradient-to-br from-violet-600 via-indigo-600 to-sky-500 px-6 py-12 text-white sm:px-12 sm:py-14">
-                <motion.div
-                  aria-hidden
-                  className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/20 blur-3xl"
-                  animate={reduce ? undefined : { scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
-                  transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-                />
-                <motion.div
-                  aria-hidden
-                  className="pointer-events-none absolute -bottom-28 left-1/4 h-72 w-72 rounded-full bg-fuchsia-300/30 blur-3xl"
-                  animate={reduce ? undefined : { x: [0, 40, 0] }}
-                  transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-                />
-                <div className="relative flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-center">
-                  <div className="max-w-xl">
-                    <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/75">Console</p>
-                    <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Open the case. Read the packet.</h2>
-                    <p className="mt-3 text-sm leading-relaxed text-white/80 sm:text-base">
-                      Decision chat, the evidence vault, the trust gate, and the audit workspace are wired to the same
-                      contract.
-                    </p>
-                  </div>
-                  <MagneticLink
-                    to="/console"
-                    className="btn-shine inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-violet-700 shadow-[0_14px_34px_-12px_rgba(15,10,40,0.45)]"
-                  >
-                    Enter VERDICT AI
-                    <ArrowRight className="h-4 w-4" />
-                  </MagneticLink>
-                </div>
-              </div>
-            </Reveal>
-          </section>
+          <CtaSection scrollRef={scrollRef} />
         </main>
 
         <footer className="border-t border-slate-200/70 bg-white">
@@ -943,109 +886,435 @@ function MagneticLink({ to, className, children }: { to: string; className?: str
   );
 }
 
-function PipelineSection({ scrollRef }: { scrollRef: RefObject<HTMLDivElement | null> }) {
+const manifesto =
+  'Models inform the case. Rules decide it. Every trust state ships with the action it demands — and a path back to the evidence that forced it.';
+const manifestoHighlights = new Set(['inform', 'decide', 'action', 'evidence']);
+
+function ManifestoSection({ scrollRef }: { scrollRef: RefObject<HTMLDivElement | null> }) {
   const sectionRef = useRef<HTMLElement>(null);
-  const { scrollYProgress } = useScroll({
-    container: scrollRef,
-    target: sectionRef,
-    offset: ['start 80%', 'end 60%'],
-  });
-  const fill = useSpring(scrollYProgress, { stiffness: 120, damping: 28 });
+
+  useGSAP(
+    () => {
+      const scroller = scrollRef.current;
+      if (!scroller) return;
+      const mm = gsap.matchMedia();
+      mm.add(MOTION_OK, () => {
+        gsap.fromTo(
+          '.m-word',
+          { opacity: 0.12, y: 14, filter: 'blur(6px)' },
+          {
+            opacity: 1,
+            y: 0,
+            filter: 'blur(0px)',
+            stagger: 0.08,
+            ease: 'none',
+            scrollTrigger: { trigger: sectionRef.current, scroller, start: 'top 75%', end: 'bottom 60%', scrub: 0.6 },
+          },
+        );
+        gsap.fromTo(
+          '.m-orb',
+          { yPercent: -40, rotate: -20 },
+          {
+            yPercent: 40,
+            rotate: 40,
+            ease: 'none',
+            scrollTrigger: { trigger: sectionRef.current, scroller, start: 'top bottom', end: 'bottom top', scrub: true },
+          },
+        );
+        gsap.fromTo(
+          '.m-kicker',
+          { letterSpacing: '0.6em', opacity: 0 },
+          {
+            letterSpacing: '0.22em',
+            opacity: 1,
+            ease: 'none',
+            scrollTrigger: { trigger: sectionRef.current, scroller, start: 'top 85%', end: 'top 55%', scrub: true },
+          },
+        );
+      });
+      return () => mm.revert();
+    },
+    { scope: sectionRef },
+  );
 
   return (
-    <section ref={sectionRef} id="pipeline" className="mx-auto max-w-6xl scroll-mt-24 px-5 py-20 sm:px-8 sm:py-28">
-      <SectionIntro
-        kicker="Pipeline"
-        title="Nine stages. One packet."
-        body="From the source system to the console, each stage has a job. Scoring happens before the gate. The gate happens before anyone treats the result as final."
+    <section ref={sectionRef} className="relative overflow-hidden border-t border-slate-200/70 bg-white py-24 sm:py-36">
+      <div
+        aria-hidden
+        className="m-orb pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-[40%] bg-gradient-to-br from-violet-200/70 to-sky-200/40 blur-3xl"
       />
-      <div className="mt-12 h-1 overflow-hidden rounded-full bg-slate-200/70">
-        <motion.div
-          className="h-full origin-left rounded-full bg-gradient-to-r from-violet-600 via-indigo-500 to-sky-400"
-          style={{ scaleX: fill }}
-        />
+      <div
+        aria-hidden
+        className="m-orb pointer-events-none absolute -right-20 bottom-0 h-80 w-80 rounded-[45%] bg-gradient-to-br from-fuchsia-200/50 to-violet-200/40 blur-3xl"
+      />
+      <div className="relative mx-auto max-w-5xl px-5 sm:px-8">
+        <p className="m-kicker text-[11px] font-medium uppercase tracking-[0.22em] text-violet-600">Principle</p>
+        <p className="mt-6 text-3xl font-semibold leading-[1.18] tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+          {manifesto.split(' ').map((word, index) => {
+            const key = word.replace(/[^a-z]/gi, '').toLowerCase();
+            return (
+              <span
+                key={`${word}-${index}`}
+                className={cn(
+                  'm-word mr-[0.25em] inline-block',
+                  manifestoHighlights.has(key) && 'gradient-shimmer bg-clip-text text-transparent',
+                )}
+              >
+                {word}
+              </span>
+            );
+          })}
+        </p>
       </div>
-      <Reveal className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" stagger>
-        {stages.map((stage) => (
-          <motion.div
-            key={stage.n}
-            variants={flipUp}
-            whileHover={{ y: -4 }}
-            transition={{ type: 'spring', stiffness: 320, damping: 22 }}
-            className={cn('spotlight group rounded-2xl border border-slate-200/80 bg-white p-5', cardShadow)}
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-xs text-violet-600">{stage.n}</span>
-              <span className="h-1.5 w-1.5 rounded-full bg-slate-200 transition group-hover:bg-violet-500 group-hover:shadow-[0_0_10px_rgba(139,92,246,0.7)]" />
-            </div>
-            <h3 className="mt-3 text-base font-semibold text-slate-950">{stage.title}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">{stage.body}</p>
-          </motion.div>
-        ))}
-      </Reveal>
     </section>
   );
 }
 
-function ClashDiagram() {
-  const reduce = useReducedMotion();
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, amount: 0.35 });
-  const show = reduce || inView;
+function PipelineSection({ scrollRef }: { scrollRef: RefObject<HTMLDivElement | null> }) {
+  const sectionRef = useRef<HTMLElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const counterRef = useRef<HTMLSpanElement>(null);
+
+  useGSAP(
+    () => {
+      const scroller = scrollRef.current;
+      const section = sectionRef.current;
+      const viewport = viewportRef.current;
+      const track = trackRef.current;
+      if (!scroller || !section || !viewport || !track) return;
+
+      const mm = gsap.matchMedia();
+
+      mm.add(`(min-width: 1024px) and ${MOTION_OK}`, () => {
+        const distance = () => Math.max(track.scrollWidth - viewport.clientWidth, 0);
+        const tween = gsap.to(track, {
+          x: () => -distance(),
+          ease: 'none',
+          scrollTrigger: {
+            trigger: section,
+            scroller,
+            start: 'top top',
+            end: () => `+=${distance()}`,
+            pin: true,
+            scrub: 0.8,
+            anticipatePin: 1,
+            invalidateOnRefresh: true,
+            onUpdate: (self) => {
+              gsap.set(barRef.current, { scaleX: self.progress });
+              if (counterRef.current) {
+                const current = Math.min(stages.length, Math.floor(self.progress * (stages.length - 0.001)) + 1);
+                counterRef.current.textContent = String(current).padStart(2, '0');
+              }
+            },
+          },
+        });
+
+        gsap.utils.toArray<HTMLElement>('.stage-card').forEach((card) => {
+          gsap.fromTo(
+            card,
+            { opacity: 0.25, scale: 0.86, rotateY: -24, transformPerspective: 1000 },
+            {
+              opacity: 1,
+              scale: 1,
+              rotateY: 0,
+              ease: 'power2.out',
+              scrollTrigger: { trigger: card, scroller, containerAnimation: tween, start: 'left 98%', end: 'left 62%', scrub: true },
+            },
+          );
+          const digit = card.querySelector('.stage-digit');
+          if (digit) {
+            gsap.fromTo(
+              digit,
+              { xPercent: 30 },
+              {
+                xPercent: -30,
+                ease: 'none',
+                scrollTrigger: { trigger: card, scroller, containerAnimation: tween, start: 'left right', end: 'right left', scrub: true },
+              },
+            );
+          }
+        });
+      });
+
+      mm.add(`(max-width: 1023px) and ${MOTION_OK}`, () => {
+        gsap.set('.stage-card', { opacity: 0, y: 40 });
+        ScrollTrigger.batch('.stage-card', {
+          scroller,
+          start: 'top 90%',
+          once: true,
+          onEnter: (cards) =>
+            gsap.to(cards, { opacity: 1, y: 0, stagger: 0.08, duration: 0.8, ease: 'power3.out', overwrite: true }),
+        });
+      });
+
+      return () => mm.revert();
+    },
+    { scope: sectionRef },
+  );
 
   return (
-    <div ref={ref} className="grid gap-3">
-      <motion.div
-        initial={reduce ? false : { opacity: 0, x: -40 }}
-        animate={show ? { opacity: 1, x: 0 } : undefined}
-        transition={{ duration: 0.7, ease: easeOutExpo }}
-      >
-        <ClaimRow id="E-001" source="Core banking" claim="transaction_location" value="Mumbai" />
-      </motion.div>
-
-      <div className="flex items-center gap-3 px-2 text-xs font-medium uppercase tracking-[0.18em] text-orange-600">
-        <motion.span
-          className="h-px flex-1 origin-right bg-orange-300"
-          initial={reduce ? false : { scaleX: 0 }}
-          animate={show ? { scaleX: 1 } : undefined}
-          transition={{ duration: 0.8, ease: easeOutExpo, delay: 0.5 }}
-        />
-        <motion.span
-          className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1"
-          initial={reduce ? false : { opacity: 0, scale: 0.6 }}
-          animate={show ? { opacity: 1, scale: [0.6, 1.12, 1] } : undefined}
-          transition={{ duration: 0.6, delay: 0.9 }}
-        >
-          <AlertTriangle className="h-3.5 w-3.5" />
-          Location clash
-        </motion.span>
-        <motion.span
-          className="h-px flex-1 origin-left bg-orange-300"
-          initial={reduce ? false : { scaleX: 0 }}
-          animate={show ? { scaleX: 1 } : undefined}
-          transition={{ duration: 0.8, ease: easeOutExpo, delay: 0.5 }}
-        />
+    <section
+      ref={sectionRef}
+      id="pipeline"
+      className="relative scroll-mt-24 overflow-hidden bg-[#fbfaff] py-20 sm:py-28 lg:flex lg:h-screen lg:flex-col lg:justify-center lg:py-0 lg:pt-16"
+    >
+      <div className="mx-auto w-full max-w-6xl px-5 sm:px-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <SectionIntro
+            kicker="Pipeline"
+            title="Nine stages. One packet."
+            body="From the source system to the console, each stage has a job. Scoring happens before the gate. The gate happens before anyone treats the result as final."
+          />
+          <div className="hidden items-baseline gap-2 font-mono text-slate-400 lg:flex">
+            <span ref={counterRef} className="text-6xl font-semibold tracking-tight text-slate-950">
+              01
+            </span>
+            <span className="text-lg">/ {String(stages.length).padStart(2, '0')}</span>
+          </div>
+        </div>
+        <div className="mt-10 hidden h-1 overflow-hidden rounded-full bg-slate-200/70 lg:block">
+          <div
+            ref={barRef}
+            className="h-full origin-left scale-x-0 rounded-full bg-gradient-to-r from-violet-600 via-indigo-500 to-sky-400"
+          />
+        </div>
       </div>
 
-      <motion.div
-        initial={reduce ? false : { opacity: 0, x: 40 }}
-        animate={show ? { opacity: 1, x: 0 } : undefined}
-        transition={{ duration: 0.7, ease: easeOutExpo, delay: 0.15 }}
-      >
-        <ClaimRow id="E-002" source="Device telemetry" claim="device_location" value="Delhi" highlight />
-      </motion.div>
+      <div ref={viewportRef} className="mt-10">
+        <div
+          ref={trackRef}
+          className="mx-auto grid max-w-6xl gap-3 px-5 sm:grid-cols-2 sm:px-8 lg:mx-0 lg:flex lg:w-max lg:max-w-none lg:gap-6 lg:pl-[max(2rem,calc((100vw_-_72rem)/2_+_2rem))] lg:pr-[18vw]"
+        >
+          {stages.map((stage) => (
+            <article
+              key={stage.n}
+              className={cn(
+                'stage-card spotlight group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-6 lg:h-[320px] lg:w-[360px] lg:shrink-0 lg:p-8',
+                cardShadow,
+              )}
+            >
+              <span
+                aria-hidden
+                className="stage-digit pointer-events-none absolute -bottom-10 right-2 select-none text-[160px] font-semibold leading-none tracking-tighter text-violet-100/80"
+              >
+                {stage.n}
+              </span>
+              <div className="relative flex items-center justify-between">
+                <span className="rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 font-mono text-xs text-violet-700">
+                  Stage {stage.n}
+                </span>
+                <span className="h-2 w-2 rounded-full bg-slate-200 transition group-hover:bg-violet-500 group-hover:shadow-[0_0_12px_rgba(139,92,246,0.8)]" />
+              </div>
+              <h3 className="relative mt-6 text-2xl font-semibold tracking-tight text-slate-950">{stage.title}</h3>
+              <p className="relative mt-3 max-w-[26ch] text-sm leading-relaxed text-slate-600">{stage.body}</p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 
-      <motion.div
-        className="grid grid-cols-3 gap-3 pt-2"
-        initial={reduce ? false : { opacity: 0, y: 16 }}
-        animate={show ? { opacity: 1, y: 0 } : undefined}
-        transition={{ duration: 0.6, ease: easeOutExpo, delay: 1.1 }}
-      >
-        <Metric label="Fraud" value="0.91" />
-        <Metric label="Anomaly" value="0.84" />
-        <Metric label="Action" value="Review" />
-      </motion.div>
-    </div>
+function CaseSection({ scrollRef }: { scrollRef: RefObject<HTMLDivElement | null> }) {
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useGSAP(
+    () => {
+      const scroller = scrollRef.current;
+      if (!scroller) return;
+      const mm = gsap.matchMedia();
+
+      mm.add({ desktop: '(min-width: 1024px)', ok: MOTION_OK }, (context) => {
+        const { desktop, ok } = context.conditions as { desktop: boolean; ok: boolean };
+        if (!ok) return;
+
+        if (desktop) {
+          ScrollTrigger.create({
+            trigger: sectionRef.current,
+            scroller,
+            start: 'top top',
+            end: '+=100%',
+            pin: true,
+            anticipatePin: 1,
+          });
+        }
+
+        const timeline = gsap.timeline({
+          defaults: { ease: 'power3.out' },
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            scroller,
+            start: desktop ? 'top 65%' : 'top 75%',
+            end: desktop ? '+=135%' : 'bottom 70%',
+            scrub: 1,
+          },
+        });
+
+        timeline
+          .from('.case-copy > *', { y: 50, opacity: 0, stagger: 0.12 })
+          .from('.clash-left', { xPercent: -45, opacity: 0, rotate: -5 }, 0.15)
+          .from('.clash-right', { xPercent: 45, opacity: 0, rotate: 5 }, 0.3)
+          .from('.clash-line', { scaleX: 0 }, '>')
+          .from('.clash-badge', { scale: 0.2, opacity: 0, ease: 'back.out(2.6)' }, '<0.15')
+          .to('.clash-right', { boxShadow: '0 0 0 6px rgba(251,146,60,0.18)', borderColor: '#fdba74' }, '<')
+          .from('.clash-metric', { y: 36, opacity: 0, stagger: 0.1 })
+          .from('.clash-stamp', { scale: 2.6, opacity: 0, rotate: -22, ease: 'back.out(1.7)' })
+          .from('.clash-route', { x: -20, opacity: 0 }, '<0.2')
+          .to({}, { duration: 0.4 });
+      });
+
+      return () => mm.revert();
+    },
+    { scope: sectionRef },
+  );
+
+  return (
+    <section
+      ref={sectionRef}
+      id="case"
+      className="relative scroll-mt-24 overflow-hidden border-t border-slate-200/70 bg-white lg:flex lg:h-screen lg:items-center lg:pt-16"
+    >
+      <div
+        aria-hidden
+        className="pointer-events-none absolute right-0 top-1/2 h-[480px] w-[480px] -translate-y-1/2 translate-x-1/3 rounded-full bg-orange-100/50 blur-3xl"
+      />
+      <div className="relative mx-auto grid w-full max-w-6xl gap-10 px-5 py-20 sm:px-8 sm:py-28 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center lg:py-0">
+        <div className="case-copy">
+          <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-violet-600">Case TX-92831</p>
+          <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
+            Mumbai on the ledger. Delhi on the device.
+          </h2>
+          <p className="mt-5 text-base leading-relaxed text-slate-600">
+            An ₹85,000 transfer. Core banking places the terminal in Mumbai. Device telemetry places the handset in
+            Delhi at the same time. KYC still reads Mumbai. The fraud model scores 0.91 and the anomaly model 0.84.
+          </p>
+          <p className="mt-4 text-base leading-relaxed text-slate-600">
+            The gate locks <span className="font-semibold text-orange-600">CONFLICTING</span> and routes the packet to
+            human review.
+          </p>
+          <div>
+            <Link to="/console?section=demo" className={cn(primaryBtn, 'mt-8')} data-cursor="Run">
+              Run this case
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+
+        <div className="grid gap-3">
+          <ClaimRow className="clash-left" id="E-001" source="Core banking" claim="transaction_location" value="Mumbai" />
+
+          <div className="flex items-center gap-3 px-2 text-xs font-medium uppercase tracking-[0.18em] text-orange-600">
+            <span className="clash-line h-px flex-1 origin-right bg-orange-300" />
+            <span className="clash-badge inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              Location clash
+            </span>
+            <span className="clash-line h-px flex-1 origin-left bg-orange-300" />
+          </div>
+
+          <ClaimRow
+            className="clash-right"
+            id="E-002"
+            source="Device telemetry"
+            claim="device_location"
+            value="Delhi"
+            highlight
+          />
+
+          <div className="grid grid-cols-3 gap-3 pt-2">
+            <Metric className="clash-metric" label="Fraud" value="0.91" />
+            <Metric className="clash-metric" label="Anomaly" value="0.84" />
+            <Metric className="clash-metric" label="Completeness" value="0.88" />
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-4">
+            <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400">Gate verdict</span>
+            <span className="clash-stamp inline-block -rotate-3 rounded-xl border-2 border-orange-500 px-3 py-1 text-xl font-bold tracking-tight text-orange-600">
+              CONFLICTING
+            </span>
+            <span className="clash-route inline-flex items-center gap-1.5 font-mono text-xs text-orange-700">
+              <ArrowRight className="h-3.5 w-3.5" />
+              HUMAN_REVIEW
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CtaSection({ scrollRef }: { scrollRef: RefObject<HTMLDivElement | null> }) {
+  const sectionRef = useRef<HTMLElement>(null);
+  const reduce = useReducedMotion();
+
+  useGSAP(
+    () => {
+      const scroller = scrollRef.current;
+      if (!scroller) return;
+      const mm = gsap.matchMedia();
+      mm.add(MOTION_OK, () => {
+        gsap.fromTo(
+          '.cta-card',
+          { clipPath: 'inset(14% 10% 14% 10% round 64px)', scale: 0.92 },
+          {
+            clipPath: 'inset(0% 0% 0% 0% round 32px)',
+            scale: 1,
+            ease: 'none',
+            scrollTrigger: { trigger: sectionRef.current, scroller, start: 'top 95%', end: 'top 35%', scrub: 0.8 },
+          },
+        );
+        gsap.fromTo(
+          '.cta-inner > *',
+          { y: 60, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            stagger: 0.1,
+            ease: 'power2.out',
+            scrollTrigger: { trigger: sectionRef.current, scroller, start: 'top 75%', end: 'top 35%', scrub: 0.8 },
+          },
+        );
+      });
+      return () => mm.revert();
+    },
+    { scope: sectionRef },
+  );
+
+  return (
+    <section ref={sectionRef} className="px-5 pb-20 pt-4 sm:px-8 sm:pb-28">
+      <div className="cta-card relative mx-auto max-w-6xl overflow-hidden rounded-[32px] bg-gradient-to-br from-violet-600 via-indigo-600 to-sky-500 px-6 py-14 text-white sm:px-12 sm:py-20">
+        <motion.div
+          aria-hidden
+          className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/20 blur-3xl"
+          animate={reduce ? undefined : { scale: [1, 1.2, 1], opacity: [0.5, 0.8, 0.5] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          aria-hidden
+          className="pointer-events-none absolute -bottom-28 left-1/4 h-72 w-72 rounded-full bg-fuchsia-300/30 blur-3xl"
+          animate={reduce ? undefined : { x: [0, 40, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <div className="cta-inner relative flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-center">
+          <div className="max-w-xl">
+            <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-white/75">Console</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-5xl">Open the case. Read the packet.</h2>
+            <p className="mt-3 text-sm leading-relaxed text-white/80 sm:text-base">
+              Decision chat, the evidence vault, the trust gate, and the audit workspace are wired to the same contract.
+            </p>
+          </div>
+          <MagneticLink
+            to="/console"
+            className="btn-shine inline-flex items-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-violet-700 shadow-[0_14px_34px_-12px_rgba(15,10,40,0.45)]"
+          >
+            Enter VERDICT AI
+            <ArrowRight className="h-4 w-4" />
+          </MagneticLink>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -1055,12 +1324,14 @@ function ClaimRow({
   claim,
   value,
   highlight = false,
+  className,
 }: {
   id: string;
   source: string;
   claim: string;
   value: string;
   highlight?: boolean;
+  className?: string;
 }) {
   return (
     <div
@@ -1068,6 +1339,7 @@ function ClaimRow({
         'spotlight flex items-center justify-between gap-4 rounded-2xl border bg-white px-4 py-4',
         highlight ? 'border-orange-200' : 'border-slate-200/80',
         cardShadow,
+        className,
       )}
     >
       <div>
@@ -1083,9 +1355,9 @@ function ClaimRow({
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({ label, value, className }: { label: string; value: string; className?: string }) {
   return (
-    <div className="rounded-xl border border-slate-200/80 bg-slate-50 px-3 py-2.5">
+    <div className={cn('rounded-xl border border-slate-200/80 bg-slate-50 px-3 py-2.5', className)}>
       <div className="text-[10px] uppercase tracking-[0.16em] text-slate-400">{label}</div>
       <div className="mt-1 text-sm font-semibold text-slate-900">{value}</div>
     </div>
