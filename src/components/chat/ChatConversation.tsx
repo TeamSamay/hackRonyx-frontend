@@ -69,19 +69,24 @@ function RenderAssistantContent({
     content.includes('DETERMINISTIC GATE') ||
     content.includes('TRUST STATE:');
 
-  const isConflicting =
-    hasGateEvaluation &&
-    (/\b(CONFLICTING|REFUSE|REFUSED|BLOCKED|CRITICAL CONTRADICTION)\b/i.test(content) ||
-      content.includes('DISBURSEMENT BLOCKED'));
-
+  // Priority 1: Incomplete / Data Required / Awaiting Ingestion
   const isIncomplete =
     hasGateEvaluation &&
-    !isConflicting &&
-    (/\b(INCOMPLETE|REQUEST_DATA|NEED_MORE_INFO|INSUFFICIENT|AWAITING INGESTION)\b/i.test(content) ||
+    (/\b(INCOMPLETE|REQUEST_DATA|NEED_MORE_INFO|INSUFFICIENT|AWAITING INGESTION|HOLD FOR MISSING RECORDS)\b/i.test(content) ||
       content.includes('NEED MORE INFO') ||
       content.includes('INSUFFICIENT PRIMARY SOURCES') ||
-      content.includes('HOLD FOR MISSING RECORDS'));
+      content.includes('TRUST GATE: INCOMPLETE'));
 
+  // Priority 2: Conflicting / Fraud Blocked (ONLY if not incomplete)
+  const isConflicting =
+    hasGateEvaluation &&
+    !isIncomplete &&
+    (/\b(CONFLICTING|REFUSE|REFUSED|CRITICAL CONTRADICTION)\b/i.test(content) ||
+      content.includes('DISBURSEMENT BLOCKED') ||
+      content.includes('TRUST STATE: CONFLICTING') ||
+      content.includes('TRUST GATE: CONFLICTING'));
+
+  // Priority 3: Sufficient / Approved (ONLY if neither conflicting nor incomplete)
   const isSufficient =
     hasGateEvaluation &&
     !isConflicting &&
@@ -159,8 +164,13 @@ function RenderAssistantContent({
           const lowerLine = line.toLowerCase();
 
           // 2.A Highlighted Executive Summary Card (Instant Judge Clarity)
-          if (lowerLine.includes('plain english summary:') || lowerLine.includes('summary in simple words:')) {
-            const summaryText = line.replace(/^[•\-\*\s]*(plain english summary|summary in simple words):\s*/i, '');
+          if (lowerLine.includes('plain english summary') || lowerLine.includes('summary in simple words')) {
+            const summaryText = line
+              .replace(/^[\s•\-\*]*(\*\*|\*|\b)?(plain english summary|summary in simple words)(\*\*|\*|\b)?:?\s*/i, '')
+              .replace(/^(\*\*|\*)/, '')
+              .replace(/(\*\*|\*)$/, '')
+              .trim();
+            if (!summaryText || summaryText === '**' || summaryText === '*') return null;
             return (
               <div
                 key={idx}
@@ -170,6 +180,8 @@ function RenderAssistantContent({
                     ? "bg-rose-950/25 border-rose-500/30 text-rose-100"
                     : isSufficient
                     ? "bg-emerald-950/25 border-emerald-500/30 text-emerald-100"
+                    : isIncomplete
+                    ? "bg-amber-950/25 border-amber-500/30 text-amber-100"
                     : "bg-violet-950/30 border-violet-500/30 text-violet-100"
                 )}
               >
