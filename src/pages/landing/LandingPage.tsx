@@ -1,10 +1,10 @@
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
-  type RefObject,
 } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -154,7 +154,12 @@ export function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
   const [intro, setIntro] = useState(!reduce);
   const [hoveredNav, setHoveredNav] = useState<string | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [scrollerEl, setScrollerEl] = useState<HTMLDivElement | null>(null);
+  const attachScroller = useCallback((node: HTMLDivElement | null) => {
+    scrollRef.current = node;
+    setScrollerEl(node);
+  }, []);
   const contentRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLElement>(null);
 
@@ -219,7 +224,7 @@ export function LandingPage() {
   return (
     <MotionConfig reducedMotion="user">
       <div
-        ref={scrollRef}
+        ref={attachScroller}
         id="top"
         className="relative h-full overflow-y-auto bg-[#fbfaff] text-slate-900 [color-scheme:light] selection:bg-violet-200"
         onPointerMove={trackSpotlight}
@@ -515,7 +520,7 @@ export function LandingPage() {
             </Reveal>
           </section>
 
-          <ManifestoSection scrollRef={scrollRef} />
+          <ManifestoSection scroller={scrollerEl} />
 
           <section id="gate" className="relative scroll-mt-24 overflow-hidden border-y border-slate-200/70 bg-gradient-to-b from-violet-50/70 via-white to-white">
             <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-28">
@@ -563,11 +568,11 @@ export function LandingPage() {
             </div>
           </section>
 
-          <PipelineSection scrollRef={scrollRef} />
+          <PipelineSection scroller={scrollerEl} />
 
-          <CaseSection scrollRef={scrollRef} />
+          <CaseSection scroller={scrollerEl} />
 
-          <CtaSection scrollRef={scrollRef} />
+          <CtaSection scroller={scrollerEl} />
         </main>
 
         <footer className="border-t border-slate-200/70 bg-white">
@@ -890,12 +895,11 @@ const manifesto =
   'Models inform the case. Rules decide it. Every trust state ships with the action it demands — and a path back to the evidence that forced it.';
 const manifestoHighlights = new Set(['inform', 'decide', 'action', 'evidence']);
 
-function ManifestoSection({ scrollRef }: { scrollRef: RefObject<HTMLDivElement | null> }) {
+function ManifestoSection({ scroller }: { scroller: HTMLDivElement | null }) {
   const sectionRef = useRef<HTMLElement>(null);
 
   useGSAP(
     () => {
-      const scroller = scrollRef.current;
       if (!scroller) return;
       const mm = gsap.matchMedia();
       mm.add(MOTION_OK, () => {
@@ -934,7 +938,7 @@ function ManifestoSection({ scrollRef }: { scrollRef: RefObject<HTMLDivElement |
       });
       return () => mm.revert();
     },
-    { scope: sectionRef },
+    { scope: sectionRef, dependencies: [scroller] },
   );
 
   return (
@@ -970,7 +974,7 @@ function ManifestoSection({ scrollRef }: { scrollRef: RefObject<HTMLDivElement |
   );
 }
 
-function PipelineSection({ scrollRef }: { scrollRef: RefObject<HTMLDivElement | null> }) {
+function PipelineSection({ scroller }: { scroller: HTMLDivElement | null }) {
   const sectionRef = useRef<HTMLElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -979,7 +983,6 @@ function PipelineSection({ scrollRef }: { scrollRef: RefObject<HTMLDivElement | 
 
   useGSAP(
     () => {
-      const scroller = scrollRef.current;
       const section = sectionRef.current;
       const viewport = viewportRef.current;
       const track = trackRef.current;
@@ -1051,7 +1054,7 @@ function PipelineSection({ scrollRef }: { scrollRef: RefObject<HTMLDivElement | 
 
       return () => mm.revert();
     },
-    { scope: sectionRef },
+    { scope: sectionRef, dependencies: [scroller] },
   );
 
   return (
@@ -1117,12 +1120,11 @@ function PipelineSection({ scrollRef }: { scrollRef: RefObject<HTMLDivElement | 
   );
 }
 
-function CaseSection({ scrollRef }: { scrollRef: RefObject<HTMLDivElement | null> }) {
+function CaseSection({ scroller }: { scroller: HTMLDivElement | null }) {
   const sectionRef = useRef<HTMLElement>(null);
 
   useGSAP(
     () => {
-      const scroller = scrollRef.current;
       if (!scroller) return;
       const mm = gsap.matchMedia();
 
@@ -1167,7 +1169,7 @@ function CaseSection({ scrollRef }: { scrollRef: RefObject<HTMLDivElement | null
 
       return () => mm.revert();
     },
-    { scope: sectionRef },
+    { scope: sectionRef, dependencies: [scroller] },
   );
 
   return (
@@ -1245,13 +1247,12 @@ function CaseSection({ scrollRef }: { scrollRef: RefObject<HTMLDivElement | null
   );
 }
 
-function CtaSection({ scrollRef }: { scrollRef: RefObject<HTMLDivElement | null> }) {
+function CtaSection({ scroller }: { scroller: HTMLDivElement | null }) {
   const sectionRef = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
 
   useGSAP(
     () => {
-      const scroller = scrollRef.current;
       if (!scroller) return;
       const mm = gsap.matchMedia();
       mm.add(MOTION_OK, () => {
@@ -1279,7 +1280,7 @@ function CtaSection({ scrollRef }: { scrollRef: RefObject<HTMLDivElement | null>
       });
       return () => mm.revert();
     },
-    { scope: sectionRef },
+    { scope: sectionRef, dependencies: [scroller] },
   );
 
   return (
