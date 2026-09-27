@@ -14,6 +14,7 @@ import {
   Files,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { Link } from 'react-router-dom';
 import { AnimatedOrb } from '@/components/chat/AnimatedOrb';
 import { springSnappy } from '@/lib/motion';
 import { cn } from '@/lib/utils';
@@ -82,13 +83,13 @@ export function ChatSidebar({
     >
       {/* Brand Title Header */}
       <div className="flex items-center justify-between gap-3 px-4 pb-3 pt-5 border-b border-line/40">
-        <div className="flex items-center gap-3">
+        <Link to="/" className="flex items-center gap-3">
           <AnimatedOrb size="sm" />
           <div>
             <div className="text-sm font-semibold tracking-wide text-frost">VERDICT AI</div>
             <div className="text-[10px] uppercase tracking-widest text-violet-300 font-mono">Decision Intelligence</div>
           </div>
-        </div>
+        </Link>
         <button type="button" onClick={onClose} className="text-mute hover:text-frost lg:hidden" aria-label="Close navigation">
           <X className="h-4 w-4" />
         </button>

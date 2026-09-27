@@ -22,6 +22,26 @@ import { fetchChatThreadsApi, sendChatMessageApi } from '@/lib/api';
 
 type SidebarView = 'chat' | 'archived' | 'library';
 
+const consoleSections: ConsoleSection[] = [
+  'overview',
+  'cases',
+  'evidence',
+  'connectors',
+  'decisions',
+  'reviews',
+  'challenge',
+  'demo',
+  'copilot',
+];
+
+function readInitialSection(): ConsoleSection {
+  const requested = new URLSearchParams(window.location.search).get('section');
+  if (requested && (consoleSections as string[]).includes(requested)) {
+    return requested as ConsoleSection;
+  }
+  return 'overview';
+}
+
 function bootstrapChat() {
   const list = [createEmptyThread(), ...starterThreads];
   return { list, activeId: list[0].id };
@@ -29,7 +49,7 @@ function bootstrapChat() {
 
 export function VerdictConsoleApp() {
   // Navigation & Workspace State
-  const [section, setSection] = useState<ConsoleSection>('overview');
+  const [section, setSection] = useState<ConsoleSection>(readInitialSection);
   const [activeCaseId, setActiveCaseId] = useState<string>('CASE-TX92831');
   const [cases, setCases] = useState<VerdictCase[]>(mockCases);
   const [connectors] = useState<ConnectorConfig[]>(mockConnectors);
