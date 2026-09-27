@@ -1,4 +1,6 @@
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import { LandingPage } from '@/pages/landing/LandingPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { VerdictConsoleApp } from '@/pages/VerdictConsoleApp';
 import { AnimatePresence, motion } from 'motion/react';
@@ -38,7 +40,13 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/console" element={<AppContent />} />
+          <Route path="*" element={<AppContent />} />
+        </Routes>
+      </BrowserRouter>
     </AuthProvider>
   );
 }
