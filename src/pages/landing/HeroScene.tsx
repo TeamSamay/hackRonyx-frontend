@@ -33,7 +33,7 @@ const PHASES: Array<{ id: ScenePhase; label: string; caption: string; duration: 
   { id: 'ingest', label: 'Ingest', caption: 'Four read-only sources stream into the gateway', duration: 2.8 },
   { id: 'normalize', label: 'Normalize', caption: 'Claims become hashed Evidence Objects', duration: 2.4 },
   { id: 'score', label: 'Score', caption: 'XGBoost and Isolation Forest attach risk', duration: 2.4 },
-  { id: 'contradict', label: 'Contradict', caption: 'Mumbai on the ledger, Delhi on the device', duration: 2.4 },
+  { id: 'contradict', label: 'Contradict', caption: 'Mumbai at 14:02, New Delhi at 14:05', duration: 2.4 },
   { id: 'decide', label: 'Decide', caption: 'The gate locks CONFLICTING and routes to review', duration: 3.6 },
 ];
 
@@ -57,10 +57,10 @@ const SOURCES: Array<{
   y: number;
   clash?: boolean;
 }> = [
-  { id: 'bank', label: 'Core banking', meta: 'PostgreSQL · txn_ledger', claim: 'location', value: 'Mumbai', icon: Database, x: 19, y: 15, clash: true },
-  { id: 'device', label: 'Device telemetry', meta: 'REST · device_events', claim: 'location', value: 'Delhi', icon: Smartphone, x: 81, y: 15, clash: true },
+  { id: 'bank', label: 'Bank terminal', meta: 'PostgreSQL · 14:02 IST', claim: 'location', value: 'Mumbai', icon: Database, x: 19, y: 15, clash: true },
+  { id: 'device', label: 'iPhone telemetry', meta: 'REST · 14:05 IST', claim: 'location', value: 'New Delhi', icon: Smartphone, x: 81, y: 15, clash: true },
   { id: 'kyc', label: 'KYC file', meta: 'PDF + OCR · page 2', claim: 'address', value: 'Mumbai', icon: FileText, x: 19, y: 78 },
-  { id: 'ledger', label: 'Spreadsheet', meta: 'Excel · history.xlsx', claim: 'amount', value: '₹85,000', icon: FileSpreadsheet, x: 81, y: 78 },
+  { id: 'ledger', label: 'Dispute claim', meta: 'Excel · TX-92831', claim: 'amount', value: '₹4,50,000', icon: FileSpreadsheet, x: 81, y: 78 },
 ];
 
 const HASHES = ['E-001 · sha256:9f2c…a41e', 'E-002 · sha256:1b7d…03fc', 'E-003 · sha256:c55a…9e20', 'E-004 · sha256:70e1…b6d9'];
